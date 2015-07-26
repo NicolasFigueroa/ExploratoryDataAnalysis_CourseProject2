@@ -40,18 +40,20 @@ NEI <- readRDS("data/summarySCC_PM25.rds")
 NEI = data.table(NEI)
 SCC = data.table(SCC)
 
-totalEmission <-  aggregate(Emissions ~ year,NEI, sum)
-names(totalEmission ) <- c("Year", "Emission")
+
+vehicles <- grepl("vehicle", SCC$SCC.Level.Two, ignore.case=TRUE)
+vehiclesSCC <- SCC[vehicles,]$SCC
+vehiclesNEI <- NEI[NEI$SCC %in% vehiclesSCC,]
+
+baltimore <- vehiclesNEI[vehiclesNEI$fips==24510,]
 
 
-png("graph/plot1.png", width = 480, height = 480)
-barplot(
-  totalEmission$Emission/10^6,
-  names.arg=totalEmission$Year,
-  xlab="Year",
-  ylab="PM2.5 Emissions (in Tons)",
-  main="Total PM2.5 Emissions in the United States"
-)
+png("graph/plot5.png", width = 480, height = 480)
+
+ggplot(baltimore,aes(factor(year),Emissions)) +
+  geom_bar(stat="identity",fill="blue",width=0.75) +
+  theme_bw() +  guides(fill=FALSE) +
+  labs(x="Year", y = expression("Total Emissions of PM"[2.5])) + 
+  labs(title = "Total Emissions from Motor Vehicle Sources in Baltimore City")
+
 dev.off()
-
-

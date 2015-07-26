@@ -40,18 +40,20 @@ NEI <- readRDS("data/summarySCC_PM25.rds")
 NEI = data.table(NEI)
 SCC = data.table(SCC)
 
-totalEmission <-  aggregate(Emissions ~ year,NEI, sum)
-names(totalEmission ) <- c("Year", "Emission")
+
+combustion <- grepl("comb", SCC$SCC.Level.One, ignore.case=TRUE)
+coal <- grepl("coal", SCC$SCC.Level.Four, ignore.case=TRUE) 
+coalCombustion <- (combustion & coal)
+combustionSCC <- SCC[coalCombustion,]$SCC
+combustionNEI <- NEI[NEI$SCC %in% combustionSCC,]
 
 
-png("graph/plot1.png", width = 480, height = 480)
-barplot(
-  totalEmission$Emission/10^6,
-  names.arg=totalEmission$Year,
-  xlab="Year",
-  ylab="PM2.5 Emissions (in Tons)",
-  main="Total PM2.5 Emissions in the United States"
-)
+png("graph/plot4.png", width = 480, height = 480)
+
+ggplot(combustionNEI,aes(factor(year),Emissions/10^5)) +
+  geom_bar(stat="identity",fill="blue",width=0.75) +
+  theme_bw() +  guides(fill=FALSE) +
+  labs(x="Year", y=expression("Total Emissions of PM"[2.5]*" (Tons)")) + 
+  labs(title=expression("Emissions from Coal Combustion for the US"))
+
 dev.off()
-
-

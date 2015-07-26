@@ -40,18 +40,26 @@ NEI <- readRDS("data/summarySCC_PM25.rds")
 NEI = data.table(NEI)
 SCC = data.table(SCC)
 
-totalEmission <-  aggregate(Emissions ~ year,NEI, sum)
-names(totalEmission ) <- c("Year", "Emission")
+
+vehicles <- grepl("vehicle", SCC$SCC.Level.Two, ignore.case=TRUE)
+vehiclesSCC <- SCC[vehicles,]$SCC
+vehiclesNEI <- NEI[NEI$SCC %in% vehiclesSCC,]
+
+vehiclesBaltimoreNEI <- vehiclesNEI[vehiclesNEI$fips == 24510,]
+vehiclesBaltimoreNEI$city <- "Baltimore"
+vehiclesLosAngelesNEI <- vehiclesNEI[vehiclesNEI$fips=="06037",]
+vehiclesLosAngelesNEI$city <- "Los Angeles"
+bothNEI <- rbind(vehiclesBaltimoreNEI,vehiclesLosAngelesNEI)
 
 
-png("graph/plot1.png", width = 480, height = 480)
-barplot(
-  totalEmission$Emission/10^6,
-  names.arg=totalEmission$Year,
-  xlab="Year",
-  ylab="PM2.5 Emissions (in Tons)",
-  main="Total PM2.5 Emissions in the United States"
-)
+png("graph/plot6.png", width = 480, height = 480)
+
+ggplot(bothNEI, aes(x=factor(year), y=Emissions, fill=city)) +
+  geom_bar(aes(fill=year),stat="identity") +
+  facet_grid(scales="free", space="free", .~city) +
+  guides(fill=FALSE) + theme_bw() +
+  labs(x = "Year") + labs(y = expression("Total Emissions of PM"[2.5])) +
+  xlab("Year") +
+  ggtitle(expression("Motor vehicle emission in Baltimore and Los Angeles"))
+
 dev.off()
-
-
